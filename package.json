@@ -1,0 +1,16 @@
+{
+    "devDependencies": {
+        "@openapitools/openapi-generator-cli": "2.3.5"
+    },
+    "scripts": {
+        "generate:server": "openapi-generator-cli generate -g python-flask -o server -i $npm_config_openapi",
+        "generate:server:latest": "openapi-generator-cli generate -g python-flask -o server -i https://nlpsandbox.github.io/nlpsandbox-schemas/phi-annotator/latest/openapi.json",
+        "generate:server:edge": "openapi-generator-cli generate -g python-flask -o server -i https://nlpsandbox.github.io/nlpsandbox-schemas/phi-annotator/edge/openapi.json",
+        "generate:server:version": "openapi-generator-cli generate -g python-flask -o server -i https://nlpsandbox.github.io/nlpsandbox-schemas/phi-annotator/$npm_config_schemas_version/openapi.json",
+        "lint": "cd server && flake8",
+        "test": "cd server && tox",
+        "install:dependencies": "npm ci && cd server && pip install -r requirements.txt",
+        "start:dev": "cd server && python -m openapi_server",
+        "start:prod": "docker compose up --build"
+    }
+}
