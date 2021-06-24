@@ -12,7 +12,6 @@ parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
 import nlp_config as cf
-spark = cf.init_spark()
 
 def create_text_id_annotations(text_id_annotation_request=None):  # noqa: E501
     """Annotate IDs in a clinical note
@@ -30,23 +29,23 @@ def create_text_id_annotations(text_id_annotation_request=None):  # noqa: E501
             note = annotation_request._note
             annotations = []
             
-            print(note._text)
             input_df = [note._text]
-            spark_df = spark.createDataFrame([input_df],["text"])
-                            
-
+            
+            spark_df = cf.spark.createDataFrame([input_df],["text"])
+                        
             spark_df.show(truncate=70)
 
             embeddings = 'nlp_models/embeddings_clinical_en'
 
             model_name = 'nlp_models/ner_deid_large'
 
-
-            ner_df = cf.get_clinical_entities (spark, embeddings, spark_df,model_name)
+            ner_df = cf.get_clinical_entities (cf.spark, embeddings, spark_df,model_name)
 
             df = ner_df.toPandas()
-
-            df_id = df.loc[df['ner_label'] == 'ID']
+            
+            print(df)
+            df_id = df.loc[(df['ner_label'] == 'ID') | (df['ner_label'] == 'CONTACT')]
+            
 
             date_json = df_id.reset_index().to_json(orient='records')
 
@@ -55,10 +54,12 @@ def create_text_id_annotations(text_id_annotation_request=None):  # noqa: E501
             for key in id_annotations:
 	            print(key['chunk'],key['begin'],key['end'],key['ner_label'])
 
+            add_id_annotation(annotations, id_annotations)
 
-            res = TextIdAnnotationResponse(annotations, id_annotations)
+            res = TextIdAnnotationResponse(annotations)
             status = 200
         except Exception as error:
+            print(str(error))
             status = 500
             res = Error("Internal error", status, str(error))
     return res, status
@@ -91,8 +92,3 @@ def id_type(id):
             continue
     return found
 
-# matches = re.finditer(r"[\d]{3}-[\d]{2}-[\d]{4}", note._text)
-#             add_id_annotation(annotations, matches, "ssn")
-
-#             matches = re.finditer(r"[\d]{5,}", note._text)
-#             add_id_annotation(annotations, matches, "id_number")

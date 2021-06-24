@@ -9,19 +9,6 @@ from openapi_server.models.text_person_name_annotation_response import TextPerso
 
 import json
 import nlp_config as cf
-class Spark:
-    def __init__(self):
-        # https://www.usna.edu/Users/cs/roche/courses/s15si335/proj1/files.php%3Ff=names.txt.html
-        firstnames_df = pd.read_csv("data/first_names.csv")
-        # Top 1000 last names from census.gov (18-10-2020)
-        # https://www.census.gov/topics/population/genealogy/data/2000_surnames.html
-        lastnames_df = pd.read_csv("data/last_names.csv")
-
-        # Append all names
-        session = cf.init_spark()
-
-
-spark = Spark()
 
 
 def create_text_person_name_annotations():  # noqa: E501
@@ -40,7 +27,7 @@ def create_text_person_name_annotations():  # noqa: E501
             annotations = []
 
             input_df = [note._text]
-            spark_df = spark._session.createDataFrame([input_df],["text"])
+            spark_df = cf.spark.createDataFrame([input_df],["text"])
                             
 
             spark_df.show(truncate=70)
@@ -50,15 +37,18 @@ def create_text_person_name_annotations():  # noqa: E501
             model_name = 'nlp_models/ner_deid_large'
 
 
-            ner_df = cf.get_clinical_entities (spark._session, embeddings, spark_df,model_name)
+            ner_df = cf.get_clinical_entities (cf.spark, embeddings, spark_df,model_name)
 
             df = ner_df.toPandas()
 
-            df_name = df.loc[df['ner_label'] == 'name']
+            df_name = df.loc[df['ner_label'] == 'NAME']
 
             name_json = df_name.reset_index().to_json(orient='records')
 
             name_annotations = json.loads(name_json)
+
+            for key in name_annotations:
+	            print(key['chunk'],key['begin'],key['end'],key['ner_label'])
 
             for match in name_annotations:
                 annotations.append(TextPersonNameAnnotation(
@@ -71,5 +61,6 @@ def create_text_person_name_annotations():  # noqa: E501
             status = 200
         except Exception as error:
             status = 500
+            print(str(error))
             res = Error("Internal error", status, str(error))
     return res, status

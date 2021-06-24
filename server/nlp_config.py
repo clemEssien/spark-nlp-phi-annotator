@@ -11,15 +11,25 @@ import pandas as pd
 import pyspark.sql.functions as F
 from pyspark.sql.functions import monotonically_increasing_id
 
-def init_spark():
-    params = {"spark.driver.memory":"16G",
+# def init_spark():
+#     params = {"spark.driver.memory":"16G",
+#               "spark.kryoserializer.buffer.max":"2000M",
+#               "spark.driver.maxResultSize":"2000M"}
+
+#     spark = sparknlp_jsl.start(os.environ['JSL_SECRET'],params=params)
+#     print("done! setting up spark")
+#     return spark
+
+class Spark:
+    def __init__(self):
+       
+        # create session
+        params = {"spark.driver.memory":"4G",
               "spark.kryoserializer.buffer.max":"2000M",
               "spark.driver.maxResultSize":"2000M"}
-
-    spark = sparknlp_jsl.start(os.environ['JSL_SECRET'],params=params)
-    print("done! setting up spark")
-    return spark
-
+        self.spark = sparknlp_jsl.start(os.environ['JSL_SECRET'],params=params)
+        
+spark = Spark().spark
 
 def get_base_pipeline (embeddings):
 

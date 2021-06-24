@@ -5,3 +5,7 @@ node_modules/
 .env
 dist.yaml
 openapi.yaml
+server/nlp-models/
+server/nlp-models/*
+server/nlp_models
+server/nlp-models/**

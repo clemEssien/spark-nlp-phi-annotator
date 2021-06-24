@@ -12,7 +12,6 @@ sys.path.append(parentdir)
 
 import json
 import nlp_config as cf
-spark = cf.init_spark()
 
 def create_text_contact_annotations(text_contact_annotation_request=None):  # noqa: E501
     """Annotate contacts in a clinical note
@@ -28,7 +27,7 @@ def create_text_contact_annotations(text_contact_annotation_request=None):  # no
             print(note)
             annotations = []
             input_df = [note._text]
-            spark_df = spark.createDataFrame([input_df],["text"])
+            spark_df = cf.spark.createDataFrame([input_df],["text"])
                             
 
             spark_df.show(truncate=70)
@@ -37,8 +36,7 @@ def create_text_contact_annotations(text_contact_annotation_request=None):  # no
 
             model_name = 'nlp_models/ner_deid_large'
 
-
-            ner_df = cf.get_clinical_entities (spark, embeddings, spark_df,model_name)
+            ner_df = cf.get_clinical_entities (cf.spark, embeddings, spark_df,model_name)
 
             df = ner_df.toPandas()
 
@@ -56,6 +54,7 @@ def create_text_contact_annotations(text_contact_annotation_request=None):  # no
             status = 200
         except Exception as error:
             status = 500
+            print(str(error))
             res = Error("Internal error", status, str(error))
     return res, status
 
@@ -67,10 +66,27 @@ def add_contact_annotation(annotations, contact_annnotations):
     """
     for match in contact_annnotations:
         annotations.append(TextContactAnnotation(
-            tart = match['begin'],
+            start = match['begin'],
             length= len(match['chunk']),
             text = match['chunk'],
-            contact_type="",
+            contact_type=contact_type(match['chunk']),
             confidence=95.5
         ))
+
+def contact_type(contact):
+    contact_pattern = {"phone":"([\d]{3}\)\s[\d]{3}-[\d]{4})",
+                        "phone":"([\d]{3}\)[\d]{3}[\d]{4})",
+                        "phone:":"[\d]{3}-[\d]{3}-[\d]{4}",
+                        "url": "https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,}",
+                        "email": "[\S]+@[\S]"
+                       }
+    found = "UNKNOWN"
+    for key in contact_pattern.keys():
+        if re.search(contact_pattern[key], contact):
+            found = key
+            return found
+        else:
+            continue
+    return found
+
 

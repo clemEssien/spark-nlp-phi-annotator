@@ -15,7 +15,6 @@ parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
 import nlp_config as cf
-spark = cf.init_spark()
 
 def create_text_date_annotations():  # noqa: E501
     """Annotate dates in a clinical note
@@ -35,7 +34,7 @@ def create_text_date_annotations():  # noqa: E501
             annotations = []
             print(note._text)
             input_df = [note._text]
-            spark_df = spark.createDataFrame([input_df],["text"])
+            spark_df = cf.spark.createDataFrame([input_df],["text"])
                             
 
             spark_df.show(truncate=70)
@@ -45,7 +44,7 @@ def create_text_date_annotations():  # noqa: E501
             model_name = 'nlp_models/ner_deid_large'
 
 
-            ner_df = cf.get_clinical_entities (spark, embeddings, spark_df,model_name)
+            ner_df = cf.get_clinical_entities (cf.spark, embeddings, spark_df,model_name)
 
             df = ner_df.toPandas()
 
@@ -96,18 +95,4 @@ def add_date_annotation(annotations, date_annotations):
         length= len(match['chunk']),
         date_format = get_date_format(match['chunk']),
         confidence = 95.5
-        ))
-
-def add_date_annotation(annotations, matches, date_format):
-    """
-    Converts matches to TextDateAnnotation objects and adds them to the
-    annotations array specified.
-    """
-    for match in matches:
-        annotations.append(TextDateAnnotation(
-            start=match.start(),
-            length=len(match[0]),
-            text=match[0],
-            date_format=date_format,
-            confidence=95.5
         ))
