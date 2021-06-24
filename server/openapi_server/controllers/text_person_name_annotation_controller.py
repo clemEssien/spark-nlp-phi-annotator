@@ -7,8 +7,9 @@ from openapi_server.models.text_person_name_annotation_request import TextPerson
 from openapi_server.models.text_person_name_annotation import TextPersonNameAnnotation  # noqa: E501
 from openapi_server.models.text_person_name_annotation_response import TextPersonNameAnnotationResponse  # noqa: E501
 
-
-class Data:
+import json
+import nlp_config as cf
+class Spark:
     def __init__(self):
         # https://www.usna.edu/Users/cs/roche/courses/s15si335/proj1/files.php%3Ff=names.txt.html
         firstnames_df = pd.read_csv("data/first_names.csv")
@@ -17,11 +18,10 @@ class Data:
         lastnames_df = pd.read_csv("data/last_names.csv")
 
         # Append all names
-        names = firstnames_df['firstname'].append(lastnames_df['lastname'])
-        self._names = names.str.lower().unique().tolist()
+        session = cf.init_spark()
 
 
-data = Data()
+spark = Spark()
 
 
 def create_text_person_name_annotations():  # noqa: E501
@@ -39,15 +39,32 @@ def create_text_person_name_annotations():  # noqa: E501
             note = annotation_request._note  # noqa: E501
             annotations = []
 
-            for name in data._names:
-                if name in note._text.lower():
-                    matches = re.finditer(
-                        r'\b({})\b'.format(name), note._text, re.IGNORECASE)
-                    for match in matches:
-                        annotations.append(TextPersonNameAnnotation(
-                            start=match.start(),
-                            length=len(match[0]),
-                            text=match[0],
+            input_df = [note._text]
+            spark_df = spark._session.createDataFrame([input_df],["text"])
+                            
+
+            spark_df.show(truncate=70)
+
+            embeddings = 'nlp_models/embeddings_clinical_en'
+
+            model_name = 'nlp_models/ner_deid_large'
+
+
+            ner_df = cf.get_clinical_entities (spark._session, embeddings, spark_df,model_name)
+
+            df = ner_df.toPandas()
+
+            df_name = df.loc[df['ner_label'] == 'name']
+
+            name_json = df_name.reset_index().to_json(orient='records')
+
+            name_annotations = json.loads(name_json)
+
+            for match in name_annotations:
+                annotations.append(TextPersonNameAnnotation(
+                            start=match['begin'],
+                            length=len(match['chunk']),
+                            text=match['chunk'],
                             confidence=95.5
                         ))
             res = TextPersonNameAnnotationResponse(annotations)
