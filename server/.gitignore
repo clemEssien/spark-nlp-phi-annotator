@@ -69,4 +69,4 @@ target/
 #Ipython Notebook
 .ipynb_checkpoints
 
-nlp-models/
+server/nlp-models/
