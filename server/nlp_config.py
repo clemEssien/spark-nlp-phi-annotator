@@ -56,7 +56,7 @@ def get_base_pipeline (embeddings):
 def get_clinical_entities (spark, embeddings, spark_df, model_name):
 
   # NER model trained on i2b2 (sampled from MIMIC) dataset
-  loaded_ner_model = NerDLModel.load('nlp_models/ner_deid_large') \
+  loaded_ner_model = NerDLModel.load(model_name) \
       .setInputCols(["sentence", "token", "embeddings"]) \
       .setOutputCol("ner")
 
