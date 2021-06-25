@@ -8,13 +8,8 @@ from openapi_server.models.text_date_annotation_request import \
 from openapi_server.models.text_date_annotation import TextDateAnnotation
 from openapi_server.models.text_date_annotation_response import \
     TextDateAnnotationResponse  # noqa: E501
-
-import os, sys
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-
 import nlp_config as cf
+
 
 def create_text_date_annotations():  # noqa: E501
     """Annotate dates in a clinical note
@@ -34,31 +29,20 @@ def create_text_date_annotations():  # noqa: E501
             annotations = []
             print(note._text)
             input_df = [note._text]
-            spark_df = cf.spark.createDataFrame([input_df],["text"])
-                            
-
+            spark_df = cf.spark.createDataFrame([input_df], ["text"])
             spark_df.show(truncate=70)
 
             embeddings = 'nlp_models/embeddings_clinical_en'
-
             model_name = 'nlp_models/ner_deid_large'
 
-
-            ner_df = cf.get_clinical_entities (cf.spark, embeddings, spark_df,model_name)
-
+            ner_df = cf.get_clinical_entities(cf.spark, embeddings, spark_df, model_name)
             df = ner_df.toPandas()
 
             df_date = df.loc[df['ner_label'] == 'DATE']
-
             date_json = df_date.reset_index().to_json(orient='records')
 
             date_annotations = json.loads(date_json)
-
-            for key in date_annotations:
-	            print(key['chunk'],key['begin'],key['end'],key['ner_label'])
-
             add_date_annotation(annotations, date_annotations)
-            
             res = TextDateAnnotationResponse(annotations)
             status = 200
         except Exception as error:
@@ -69,11 +53,13 @@ def create_text_date_annotations():  # noqa: E501
 
 
 def get_date_format(date_str):
-    date_pattern = {"MM/DD/YYYY":"([1-9]|0[1-9]|1[0-2])(/)([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])(/)(19[0-9][0-9]|20[0-9][0-9])",
-    "DD.MM.YYYY":"([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])(\\.)([1-9]|0[1-9]|1[0-2])(\\.)(19[0-9][0-9]|20[0-9][0-9])",
-    "YYYY":"([1-9][1-9][0-9][0-9]|2[0-9][0-9][0-9])",
-    "MMMM":"(January|February|March|April|May|June|July|August|September|October|November|December)"
-    }
+    date_pattern = {"MM/DD/YYYY": "([1-9]|0[1-9]|1[0-2])(/)\
+                    ([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])(/)(19[0-9][0-9]|20[0-9][0-9])",
+                    "DD.MM.YYYY": "([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])(\\.)([1-9]|0[1-9]\
+                    |1[0-2])(\\.)(19[0-9][0-9]|20[0-9][0-9])",
+                    "YYYY": "([1-9][1-9][0-9][0-9]|2[0-9][0-9][0-9])",
+                    "MMMM": "(January|February|March|April|May|June|July|August|September|October|November|December)"
+                    }
     found = 'UNKNOWN'
     for key in date_pattern.keys():
         if re.search(date_pattern[key], date_str):
@@ -83,6 +69,7 @@ def get_date_format(date_str):
             continue
     return found
 
+
 def add_date_annotation(annotations, date_annotations):
     """
     Converts matches to TextDateAnnotation objects and adds them to the
@@ -90,9 +77,9 @@ def add_date_annotation(annotations, date_annotations):
     """
     for match in date_annotations:
         annotations.append(TextDateAnnotation(
-        start = match['begin'],
-        text = match['chunk'],
-        length= len(match['chunk']),
-        date_format = get_date_format(match['chunk']),
-        confidence = 95.5
+            start=match['begin'],
+            text=match['chunk'],
+            length=len(match['chunk']),
+            date_format=get_date_format(match['chunk']),
+            confidence=95.5
         ))

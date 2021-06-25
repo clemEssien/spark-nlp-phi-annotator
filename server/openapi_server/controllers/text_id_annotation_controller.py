@@ -4,14 +4,9 @@ from openapi_server.models.error import Error  # noqa: E501
 from openapi_server.models.text_id_annotation_request import TextIdAnnotationRequest  # noqa: E501
 from openapi_server.models.text_id_annotation import TextIdAnnotation
 from openapi_server.models.text_id_annotation_response import TextIdAnnotationResponse  # noqa: E501
-
-import os, sys
 import json
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-
 import nlp_config as cf
+
 
 def create_text_id_annotations(text_id_annotation_request=None):  # noqa: E501
     """Annotate IDs in a clinical note
@@ -28,31 +23,18 @@ def create_text_id_annotations(text_id_annotation_request=None):  # noqa: E501
             annotation_request = TextIdAnnotationRequest.from_dict(connexion.request.get_json())  # noqa: E501
             note = annotation_request._note
             annotations = []
-            
+
             input_df = [note._text]
-            
-            spark_df = cf.spark.createDataFrame([input_df],["text"])
-                        
-            spark_df.show(truncate=70)
+            spark_df = cf.spark.createDataFrame([input_df], ["text"])
 
             embeddings = 'nlp_models/embeddings_clinical_en'
-
             model_name = 'nlp_models/ner_deid_large'
 
-            ner_df = cf.get_clinical_entities (cf.spark, embeddings, spark_df,model_name)
-
+            ner_df = cf.get_clinical_entities(cf.spark, embeddings, spark_df, model_name)
             df = ner_df.toPandas()
-            
-            print(df)
             df_id = df.loc[(df['ner_label'] == 'ID') | (df['ner_label'] == 'CONTACT')]
-            
-
             date_json = df_id.reset_index().to_json(orient='records')
-
             id_annotations = json.loads(date_json)
-
-            for key in id_annotations:
-	            print(key['chunk'],key['begin'],key['end'],key['ner_label'])
 
             add_id_annotation(annotations, id_annotations)
 
@@ -79,9 +61,10 @@ def add_id_annotation(annotations, id_annotations):
             confidence=95.5
         ))
 
+
 def id_type(id):
-    id_types = {"ssn": "[\d]{3}-[\d]{2}-[\d]{4}",
-                "id_number":"[\d]{5,}"
+    id_types = {"ssn": (r"[\d]{3}-[\d]{2}-[\d]{4}"),
+                "id_number": (r"[\d]{5,}")
                 }
     found = "UNKNOWN"
     for key in id_types.keys():
@@ -91,4 +74,3 @@ def id_type(id):
         else:
             continue
     return found
-

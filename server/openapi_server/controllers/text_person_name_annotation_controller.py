@@ -1,12 +1,8 @@
 import connexion
-import pandas as pd
-import re
-
 from openapi_server.models.error import Error  # noqa: E501
 from openapi_server.models.text_person_name_annotation_request import TextPersonNameAnnotationRequest  # noqa: E501
 from openapi_server.models.text_person_name_annotation import TextPersonNameAnnotation  # noqa: E501
 from openapi_server.models.text_person_name_annotation_response import TextPersonNameAnnotationResponse  # noqa: E501
-
 import json
 import nlp_config as cf
 
@@ -27,28 +23,17 @@ def create_text_person_name_annotations():  # noqa: E501
             annotations = []
 
             input_df = [note._text]
-            spark_df = cf.spark.createDataFrame([input_df],["text"])
-                            
-
+            spark_df = cf.spark.createDataFrame([input_df], ["text"])
             spark_df.show(truncate=70)
 
             embeddings = 'nlp_models/embeddings_clinical_en'
-
             model_name = 'nlp_models/ner_deid_large'
 
-
-            ner_df = cf.get_clinical_entities (cf.spark, embeddings, spark_df,model_name)
-
+            ner_df = cf.get_clinical_entities(cf.spark, embeddings, spark_df, model_name)
             df = ner_df.toPandas()
-
             df_name = df.loc[df['ner_label'] == 'NAME']
-
             name_json = df_name.reset_index().to_json(orient='records')
-
             name_annotations = json.loads(name_json)
-
-            for key in name_annotations:
-	            print(key['chunk'],key['begin'],key['end'],key['ner_label'])
 
             for match in name_annotations:
                 annotations.append(TextPersonNameAnnotation(
