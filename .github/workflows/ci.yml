@@ -11,7 +11,7 @@ on:
   pull_request:
 
 env:
-  docker_repository: docker.synapse.org/syn22277123/phi-annotator-example
+  docker_repository: docker.synapse.org/syn25925434/spark-nlp-phi-annotator-example
 
 jobs:
   configure:
