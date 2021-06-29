@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   phi-annotator:
-    image: docker.synapse.org/syn22277123/phi-annotator-example:1.2.1
+    image: docker.synapse.org/syn25925434/spark-nlp-phi-annotator-example 
     build:
       context: server
       dockerfile: Dockerfile
