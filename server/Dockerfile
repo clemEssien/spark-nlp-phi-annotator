@@ -39,7 +39,9 @@ RUN pip install --no-cache-dir \
 
 RUN export SPARK_HOME=/opt/spark
 
-RUN pip install -q spark-nlp-jsl==${JSL_VERSION} --extra-index-url https://pypi.johnsnowlabs.com/${JSL_SECRET} --upgrade
+# RUN pip install -q spark-nlp-jsl==${JSL_VERSION} \
+# --extra-index-url https://pypi.johnsnowlabs.com/${JSL_SECRET} --upgrade
+RUN pip install -q spark-nlp-jsl==3.1.0 --extra-index-url https://pypi.johnsnowlabs.com/3.1.0-1778570a3f59d3059ed1e58375192fd61b114fc9 --upgrade
 
 WORKDIR /
 COPY docker-entrypoint.sh .
