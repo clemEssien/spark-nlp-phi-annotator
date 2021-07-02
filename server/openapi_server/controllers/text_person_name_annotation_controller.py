@@ -1,10 +1,10 @@
 import connexion
+import json
 from openapi_server.models.error import Error  # noqa: E501
 from openapi_server.models.text_person_name_annotation_request import TextPersonNameAnnotationRequest  # noqa: E501
 from openapi_server.models.text_person_name_annotation import TextPersonNameAnnotation  # noqa: E501
 from openapi_server.models.text_person_name_annotation_response import TextPersonNameAnnotationResponse  # noqa: E501
-import json
-import nlp_config as cf
+from openapi_server import nlp_config as cf
 
 
 def create_text_person_name_annotations():  # noqa: E501

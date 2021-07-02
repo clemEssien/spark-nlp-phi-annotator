@@ -10,7 +10,7 @@ from pyspark.sql.functions import monotonically_increasing_id
 class Spark:
     def __init__(self):
         # create nlp spark session
-        params = {"spark.driver.memory": "4G",
+        params = {"spark.driver.memory": "16G",
                   "spark.kryoserializer.buffer.max": "2000M",
                   "spark.driver.maxResultSize": "2000M"}
         self.spark = sparknlp_jsl.start(os.environ['JSL_SECRET'], params=params)

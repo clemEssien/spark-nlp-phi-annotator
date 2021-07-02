@@ -1,7 +1,7 @@
 import connexion
 import re
 import json
-import nlp_config as cf
+from openapi_server import nlp_config as cf
 from openapi_server.models.error import Error  # noqa: E501
 from openapi_server.models.text_contact_annotation_request import TextContactAnnotationRequest  # noqa: E501
 from openapi_server.models.text_contact_annotation import TextContactAnnotation
@@ -66,7 +66,10 @@ def add_contact_annotation(annotations, contact_annnotations):
 def contact_type(contact):
     contact_pattern = {"phone": (r"(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]\
     ??\d{4}|\d{3}[-\.\s]??\d{4})"),
-                       "email": (r"[\S]+@[\S]")
+                       "email": (r"[\S]+@[\S]"),
+                       "url": r"https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\. \
+                       [^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\ \
+                           .[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,}"
                        }
     found = "UNKNOWN"
     for key in contact_pattern.keys():

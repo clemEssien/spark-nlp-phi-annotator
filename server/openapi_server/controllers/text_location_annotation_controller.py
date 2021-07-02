@@ -4,7 +4,7 @@ from openapi_server.models.error import Error  # noqa: E501
 from openapi_server.models.text_location_annotation import TextLocationAnnotation  # noqa: E501
 from openapi_server.models.text_location_annotation_request import TextLocationAnnotationRequest  # noqa: E501
 from openapi_server.models.text_location_annotation_response import TextLocationAnnotationResponse  # noqa: E501
-import nlp_config as cf
+from openapi_server import nlp_config as cf
 
 
 def create_text_location_annotations():  # noqa: E501

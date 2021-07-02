@@ -1,11 +1,11 @@
 import connexion
 import re
+import json
 from openapi_server.models.error import Error  # noqa: E501
 from openapi_server.models.text_id_annotation_request import TextIdAnnotationRequest  # noqa: E501
 from openapi_server.models.text_id_annotation import TextIdAnnotation
 from openapi_server.models.text_id_annotation_response import TextIdAnnotationResponse  # noqa: E501
-import json
-import nlp_config as cf
+from openapi_server import nlp_config as cf
 
 
 def create_text_id_annotations(text_id_annotation_request=None):  # noqa: E501
