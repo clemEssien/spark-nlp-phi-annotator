@@ -11,7 +11,7 @@ on:
   pull_request:
 
 env:
-  docker_repository: docker.synapse.org/syn22277123/phi-annotator-example
+  docker_repository: docker.synapse.org/syn25925434/spark-nlp-phi-annotator-example
 
 jobs:
   configure:
@@ -111,7 +111,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Download .github_env
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v2 
       with:
         name: GITHUB_ENV
         path: .

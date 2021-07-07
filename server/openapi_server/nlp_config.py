@@ -15,6 +15,7 @@ class Spark:
                   "spark.driver.maxResultSize": "2000M"}
         self.spark = sparknlp_jsl.start(os.environ['JSL_SECRET'], params=params)
 
+
 spark = Spark().spark
 
 
