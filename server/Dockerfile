@@ -1,7 +1,20 @@
-#Download base image ubuntu 18.04
 FROM python:3.9.5-slim-buster
 
 ENV APP_DIR=/opt/app
+ARG JSL_VERSION="3.1.0"
+ENV JSL_VERSION=${JSL_VERSION}
+
+ARG JSL_SECRET=""
+ENV JSL_SECRET=${JSL_SECRET}
+
+ARG SPARK_NLP_LICENSE=""
+ENV SPARK_NLP_LICENSE=${SPARK_NLP_LICENSE}
+
+ARG AWS_ACCESS_KEY_ID=""
+ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+
+ARG AWS_SECRET_ACCESS_KEY=""
+ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
@@ -12,28 +25,50 @@ RUN apt-get update -qq -y \
         gosu \
         libpcre3 \
         libpcre3-dev \
+        pkg-config \
+        software-properties-common \
+        graphviz\
+        wget \
+        nano \
+        sudo \
     && apt-get -y autoclean \
     && apt-get -y autoremove \
-    && rm -rf /var/lib/apt/lists/
+    && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://mirrors.huaweicloud.com/java/jdk/8u151-b12/jdk-8u151-linux-x64.tar.gz 
-RUN tar zxvf jdk-8u151-linux-x64.tar.gz 
-RUN rm -d jdk-8u151-linux-x64.tar.gz
-RUN mv jdk1.8.0_151 /usr/lib/jvm
-ENV JAVA_HOME /usr/lib/jvm/jdk1.8.0_15/
-RUN export JAVA_HOME
+ENV JAVA_FOLDER java-se-8u41-ri
 
-RUN echo "export JAVA_HOME=/usr/lib/jvm/jdk1.8.0_15/" >> ~/.bashrc
+ENV JVM_ROOT /usr/lib/jvm
 
-# Setup JAVA_HOME -- useful for docker commandline
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
-RUN export JAVA_HOME
+ENV JAVA_PKG_NAME openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz
+ENV JAVA_TAR_GZ_URL https://download.java.net/openjdk/jdk8u41/ri/$JAVA_PKG_NAME
 
-RUN echo "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/" >> ~/.bashrc
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*    && \
+    apt-get clean                                                               && \
+    apt-get autoremove                                                          && \
+    echo Downloading $JAVA_TAR_GZ_URL                                           && \
+    wget -q $JAVA_TAR_GZ_URL                                                    && \
+    tar -xvf $JAVA_PKG_NAME                                                     && \
+    rm $JAVA_PKG_NAME                                                           && \
+    mkdir -p /usr/lib/jvm                                                       && \
+    mv ./$JAVA_FOLDER $JVM_ROOT                                                 && \
+    update-alternatives --install /usr/bin/java java $JVM_ROOT/$JAVA_FOLDER/bin/java 1        && \
+    update-alternatives --install /usr/bin/javac javac $JVM_ROOT/$JAVA_FOLDER/bin/javac 1     && \
+    java -version
+####
+#### OPTIONAL : 4. SET JAVA_HOME environment variable, uncomment the line below if you need it
+
+ENV JAVA_HOME=$JVM_ROOT/$JAVA_FOLDER
+
+
+#Install Spark
+RUN mkdir /opt/spark
+RUN wget https://downloads.apache.org/spark/spark-3.1.2/spark-3.1.2-bin-hadoop2.7.tgz
+RUN tar xvf spark-3.1.2-bin-hadoop2.7.tgz
+RUN mv spark-3.1.2-bin-hadoop2.7/* /opt/spark
+RUN rm -d spark-3.1.2-bin-hadoop2.7.tgz
+
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-
 
 WORKDIR ${APP_DIR}
 COPY openapi_server openapi_server/
@@ -43,10 +78,30 @@ RUN pip install --no-cache-dir \
     -r requirements.txt -r prod-requirements.txt
 
 RUN pip3 install --upgrade pip
-# You only need pyspark and spark-nlp paclages to use Spark NLP
-# The rest of the PyPI packages are here as examples
-RUN pip3 install --no-cache-dir pyspark==3.1.1 spark-nlp==3.1.1
-# numpy pandas mlflow Keras matplotlib pydot tensorflow==2.4.1 graphviz
+RUN pip3 install --no-cache-dir pyspark==3.1.1 spark-nlp==3.1.0 numpy pandas 
+RUN pip install -q spark-nlp-jsl==3.1.0 --extra-index-url https://pypi.johnsnowlabs.com/3.1.0-1778570a3f59d3059ed1e58375192fd61b114fc9 --upgrade
+
+ENV SPARK_HOME="/opt/spark/"
+
+
+
+RUN echo "export SPARK_HOME=/opt/spark" >> ~/.bashrc
+RUN echo "source ~/.bashrc"
+RUN echo "export PATH=$PATH:/opt/spark/bin:/opt/spark/sbin" >> ~/.bashrc
+RUN echo "export JAVA_HOME=$JAVA_HOME" >> ~/.bashrc
+RUN echo "source ~/.bashrc"
+RUN echo "export PYSPARK_PYTHON=/usr/local/bin/python" >> ~/.bashrc
+RUN echo "source ~/.bashrc"
+
+RUN echo "bin/spark-shell --conf 'spark.driver.extraJavaOptions=-Dhttp.proxyHost=<proxyHost> -Dhttp.proxyPort=<proxyPort> -Dhttps.proxyHost=<proxyHost> -Dhttps.proxyPort=<proxyPort>' --packages <somePackage>"
+
+RUN echo "export JSL_SECRET=${JSL_SECRET}" >> ~/.bashrc
+RUN echo "export SPARK_NLP_LICENSE=${SPARK_NLP_LICENSE}" >> ~/.bashrc 
+RUN echo "export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> ~/.bashrc
+RUN echo "export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> ~/.bashrc 
+RUN echo "export JSL_VERSION=${JSL_VERSION}" >> ~/.bashrc 
+RUN echo "export PUBLIC_VERSION=3.1.0" >> ~/.bashrc
+
 
 WORKDIR /
 COPY docker-entrypoint.sh .
@@ -56,6 +111,8 @@ EXPOSE 8080
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
-# Specify the default command to run
 # Run server in development mode
-CMD ["python", "-m", "openapi_server"]
+# CMD ["python", "-m", "openapi_server"]
+
+# Run server in production mode
+CMD ["uwsgi", "--ini", "uwsgi.ini", "--lazy", "--http", ":8080"]
