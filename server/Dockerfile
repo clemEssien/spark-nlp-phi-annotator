@@ -61,12 +61,11 @@ ENV JAVA_HOME=$JVM_ROOT/$JAVA_FOLDER
 
 
 #Install Spark
-RUN mkdir /opt/spark
-RUN wget https://downloads.apache.org/spark/spark-3.1.2/spark-3.1.2-bin-hadoop2.7.tgz
-RUN tar xvf spark-3.1.2-bin-hadoop2.7.tgz
-RUN mv spark-3.1.2-bin-hadoop2.7/* /opt/spark
-RUN rm -d spark-3.1.2-bin-hadoop2.7.tgz
-
+RUN mkdir /opt/spark \ 
+    && wget https://downloads.apache.org/spark/spark-3.1.2/spark-3.1.2-bin-hadoop2.7.tgz \ 
+    && tar xvf spark-3.1.2-bin-hadoop2.7.tgz \ 
+    && mv spark-3.1.2-bin-hadoop2.7/* /opt/spark \ 
+    && rm -d spark-3.1.2-bin-hadoop2.7.tgz
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -77,30 +76,25 @@ COPY requirements.txt prod-requirements.txt uwsgi.ini ./
 RUN pip install --no-cache-dir \
     -r requirements.txt -r prod-requirements.txt
 
-RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir pyspark==3.1.1 spark-nlp==3.1.0 numpy pandas 
-RUN pip install -q spark-nlp-jsl==3.1.0 --extra-index-url https://pypi.johnsnowlabs.com/3.1.0-1778570a3f59d3059ed1e58375192fd61b114fc9 --upgrade
+RUN pip3 install --upgrade pip \
+    && pip3 install --no-cache-dir pyspark==3.1.1 spark-nlp==3.1.0 numpy pandas \
+    && pip install --no-cache-dir  -q spark-nlp-jsl==3.1.0 --extra-index-url https://pypi.johnsnowlabs.com/3.1.0-1778570a3f59d3059ed1e58375192fd61b114fc9 --upgrade
 
 ENV SPARK_HOME="/opt/spark/"
 
-
-
-RUN echo "export SPARK_HOME=/opt/spark" >> ~/.bashrc
-RUN echo "source ~/.bashrc"
-RUN echo "export PATH=$PATH:/opt/spark/bin:/opt/spark/sbin" >> ~/.bashrc
-RUN echo "export JAVA_HOME=$JAVA_HOME" >> ~/.bashrc
-RUN echo "source ~/.bashrc"
-RUN echo "export PYSPARK_PYTHON=/usr/local/bin/python" >> ~/.bashrc
-RUN echo "source ~/.bashrc"
-
-RUN echo "bin/spark-shell --conf 'spark.driver.extraJavaOptions=-Dhttp.proxyHost=<proxyHost> -Dhttp.proxyPort=<proxyPort> -Dhttps.proxyHost=<proxyHost> -Dhttps.proxyPort=<proxyPort>' --packages <somePackage>"
-
-RUN echo "export JSL_SECRET=${JSL_SECRET}" >> ~/.bashrc
-RUN echo "export SPARK_NLP_LICENSE=${SPARK_NLP_LICENSE}" >> ~/.bashrc 
-RUN echo "export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> ~/.bashrc
-RUN echo "export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> ~/.bashrc 
-RUN echo "export JSL_VERSION=${JSL_VERSION}" >> ~/.bashrc 
-RUN echo "export PUBLIC_VERSION=3.1.0" >> ~/.bashrc
+RUN echo "export SPARK_HOME=/opt/spark" >> ~/.bashrc \
+    && echo "source ~/.bashrc" \ 
+    && echo "export PATH=$PATH:/opt/spark/bin:/opt/spark/sbin" >> ~/.bashrc \ 
+    && echo "export JAVA_HOME=$JAVA_HOME" >> ~/.bashrc \ 
+    && echo "source ~/.bashrc" \ 
+    && echo "export PYSPARK_PYTHON=/usr/local/bin/python" >> ~/.bashrc \ 
+    && echo "source ~/.bashrc" \ 
+    && echo  export JSL_SECRET=${JSL_SECRET} >> ~/.bashrc \
+    && echo  export SPARK_NLP_LICENSE=${SPARK_NLP_LICENSE} >> ~/.bashrc \
+    && echo  export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} >> ~/.bashrc \
+    && echo  export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} >> ~/.bashrc \ 
+    && echo  export JSL_VERSION=${JSL_VERSION} >> ~/.bashrc \
+    && echo  export PUBLIC_VERSION=3.1.0 >> ~/.bashrc
 
 
 WORKDIR /
