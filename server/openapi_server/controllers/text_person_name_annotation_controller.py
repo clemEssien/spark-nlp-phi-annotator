@@ -1,27 +1,10 @@
 import connexion
-import pandas as pd
-import re
-
+import json
 from openapi_server.models.error import Error  # noqa: E501
 from openapi_server.models.text_person_name_annotation_request import TextPersonNameAnnotationRequest  # noqa: E501
 from openapi_server.models.text_person_name_annotation import TextPersonNameAnnotation  # noqa: E501
 from openapi_server.models.text_person_name_annotation_response import TextPersonNameAnnotationResponse  # noqa: E501
-
-
-class Data:
-    def __init__(self):
-        # https://www.usna.edu/Users/cs/roche/courses/s15si335/proj1/files.php%3Ff=names.txt.html
-        firstnames_df = pd.read_csv("data/first_names.csv")
-        # Top 1000 last names from census.gov (18-10-2020)
-        # https://www.census.gov/topics/population/genealogy/data/2000_surnames.html
-        lastnames_df = pd.read_csv("data/last_names.csv")
-
-        # Append all names
-        names = firstnames_df['firstname'].append(lastnames_df['lastname'])
-        self._names = names.str.lower().unique().tolist()
-
-
-data = Data()
+from openapi_server import nlp_config as cf
 
 
 def create_text_person_name_annotations():  # noqa: E501
@@ -39,20 +22,30 @@ def create_text_person_name_annotations():  # noqa: E501
             note = annotation_request._note  # noqa: E501
             annotations = []
 
-            for name in data._names:
-                if name in note._text.lower():
-                    matches = re.finditer(
-                        r'\b({})\b'.format(name), note._text, re.IGNORECASE)
-                    for match in matches:
-                        annotations.append(TextPersonNameAnnotation(
-                            start=match.start(),
-                            length=len(match[0]),
-                            text=match[0],
+            input_df = [note._text]
+            spark_df = cf.spark.createDataFrame([input_df], ["text"])
+            spark_df.show(truncate=70)
+
+            embeddings = 'nlp_models/embeddings_clinical_en'
+            model_name = 'nlp_models/ner_deid_large'
+
+            ner_df = cf.get_clinical_entities(cf.spark, embeddings, spark_df, model_name)
+            df = ner_df.toPandas()
+            df_name = df.loc[df['ner_label'] == 'NAME']
+            name_json = df_name.reset_index().to_json(orient='records')
+            name_annotations = json.loads(name_json)
+
+            for match in name_annotations:
+                annotations.append(TextPersonNameAnnotation(
+                            start=match['begin'],
+                            length=len(match['chunk']),
+                            text=match['chunk'],
                             confidence=95.5
                         ))
             res = TextPersonNameAnnotationResponse(annotations)
             status = 200
         except Exception as error:
             status = 500
+            print(str(error))
             res = Error("Internal error", status, str(error))
     return res, status

@@ -2,33 +2,35 @@ version: "3.8"
 
 services:
   phi-annotator:
-    image: docker.synapse.org/syn22277123/phi-annotator-example:1.2.1
+    image: docker.synapse.org/syn25925434/spark-nlp-phi-annotator-example
     build:
       context: server
       dockerfile: Dockerfile
     container_name: phi-annotator
-    networks:
-      - nlpsandbox-internal
-
-  nginx:
-    image: nginx:1.19.6-alpine
-    container_name: nginx
-    restart: always
-    environment:
-      - TOOL_HOST=phi-annotator
-      - TOOL_PORT=8080
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/templates:/etc/nginx/templates:ro
-    networks:
-      - nlpsandbox
-      - nlpsandbox-internal
     ports:
-      - "80:80"
-    depends_on:
-      - phi-annotator
+      - "80:8080"
+    # networks:
+    #   - nlpsandbox-internal
+  # nginx:
+  #   image: nginx:1.19.6-alpine
+  #   container_name: nginx
+  #   restart: always
+  #   environment:
+  #     - TOOL_HOST=phi-annotator
+  #     - TOOL_PORT=8080
+    # volumes:
+    #   - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    #   - ./nginx/templates:/etc/nginx/templates:ro
+    # networks:
+    #   - nlpsandbox
+    #   - nlpsandbox-internal
+    # ports:
+    #   - "80:80"
+    # depends_on:
+    #   - phi-annotator
 
 networks:
   nlpsandbox:
   nlpsandbox-internal:
-    internal: true
+    # internal: true
+

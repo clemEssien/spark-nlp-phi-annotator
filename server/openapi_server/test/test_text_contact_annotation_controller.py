@@ -11,7 +11,6 @@ from openapi_server.models.text_contact_annotation_request import TextContactAnn
 from openapi_server.models.text_contact_annotation_response import TextContactAnnotationResponse  # noqa: E501
 from openapi_server.test import BaseTestCase
 
-
 class TestTextContactAnnotationController(BaseTestCase):
     """TextContactAnnotationController integration test stubs"""
 
