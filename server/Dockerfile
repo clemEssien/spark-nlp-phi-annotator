@@ -96,6 +96,7 @@ RUN echo "export SPARK_HOME=/opt/spark" >> ~/.bashrc \
     && echo  export JSL_VERSION=${JSL_VERSION} >> ~/.bashrc \
     && echo  export PUBLIC_VERSION=3.1.0 >> ~/.bashrc
 
+RUN pyspark --packages com.johnsnowlabs.nlp:spark-nlp_2.12:3.1.1
 
 WORKDIR /
 COPY docker-entrypoint.sh .
