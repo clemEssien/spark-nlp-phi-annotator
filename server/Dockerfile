@@ -51,8 +51,6 @@ WORKDIR $SPARK_HOME
 RUN curl -O https://archive.apache.org/dist/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz \
     && tar xvf spark-3.1.2-bin-hadoop3.2.tgz --strip-components 1 \
     && rm -fr spark-3.1.2-bin-hadoop3.2.tgz
-    # Start Apache Spark on port 8080
-    && start-master.sh
 
 
 
