@@ -5,3 +5,4 @@ node_modules/
 .env
 dist.yaml
 openapi.yaml
+spark_nlp_for_healthcare.json
