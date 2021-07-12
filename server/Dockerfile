@@ -21,10 +21,9 @@ ARG SPARK_PUBLIC_VERSION=""
 ENV SPARK_PUBLIC_VERSION=${SPARK_PUBLIC_VERSION}
 
 ENV SPARK_HOME=/opt/spark
+ENV PATH="${PATH}:${SPARK_HOME}/bin:${SPARK_HOME}/sbin"
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
-
-RUN
 
 # hadolint ignore=DL3008
 RUN apt-get update -qq -y \
@@ -35,6 +34,8 @@ RUN apt-get update -qq -y \
         libpcre3 \
         libpcre3-dev \
         default-jre \
+        curl \
+        procps \
     && apt-get -y autoclean \
     && apt-get -y autoremove \
     && rm -rf /var/lib/apt/lists/*
@@ -45,6 +46,17 @@ COPY data data/
 COPY requirements.txt prod-requirements.txt uwsgi.ini ./
 RUN pip install --no-cache-dir \
     -r requirements.txt -r prod-requirements.txt
+
+WORKDIR $SPARK_HOME
+RUN curl -O https://archive.apache.org/dist/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz \
+    && tar xvf spark-3.1.2-bin-hadoop3.2.tgz --strip-components 1 \
+    && rm -fr spark-3.1.2-bin-hadoop3.2.tgz
+    # Start Apache Spark on port 8080
+    && start-master.sh
+
+
+
+
 
 # RUN pip install -q spark-nlp-jsl==${SPARK_JSL_VERSION} \
 #         --extra-index-url https://pypi.johnsnowlabs.com/${SPARK_LICENSE_SECRET} \
@@ -62,4 +74,4 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 # CMD ["python", "-m", "openapi_server"]
 
 # Run server in production mode
-CMD ["uwsgi", "--ini", "uwsgi.ini", "--lazy", "--http", ":8080"]
+CMD ["uwsgi", "--ini", "uwsgi.ini", "--lazy", "--http", ":8081"]
