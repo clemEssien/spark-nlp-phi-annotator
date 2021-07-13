@@ -47,18 +47,16 @@ COPY requirements.txt prod-requirements.txt uwsgi.ini ./
 RUN pip install --no-cache-dir \
     -r requirements.txt -r prod-requirements.txt
 
+# Install Spark NLP
 WORKDIR $SPARK_HOME
 RUN curl -O https://archive.apache.org/dist/spark/spark-3.1.2/spark-3.1.2-bin-hadoop3.2.tgz \
     && tar xvf spark-3.1.2-bin-hadoop3.2.tgz --strip-components 1 \
     && rm -fr spark-3.1.2-bin-hadoop3.2.tgz
 
-
-
-
-
-# RUN pip install -q spark-nlp-jsl==${SPARK_JSL_VERSION} \
-#         --extra-index-url https://pypi.johnsnowlabs.com/${SPARK_LICENSE_SECRET} \
-#         --upgrade
+# Install Spark NLP for Healthcare
+RUN pip install -q spark-nlp-jsl==${SPARK_JSL_VERSION} \
+    --extra-index-url https://pypi.johnsnowlabs.com/${SPARK_LICENSE_SECRET} \
+    --upgrade
 
 WORKDIR /
 COPY docker-entrypoint.sh .

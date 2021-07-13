@@ -6,6 +6,13 @@ services:
     build:
       context: server
       dockerfile: Dockerfile
+      args:
+        - SPARK_LICENSE_KEY
+        - SPARK_LICENSE_SECRET
+        - SPARK_AWS_ACCESS_KEY_ID
+        - SPARK_AWS_SECRET_ACCESS_KEY
+        - SPARK_JSL_VERSION
+        - SPARK_PUBLIC_VERSION
     container_name: phi-annotator
     environment:
       - SPARK_LICENSE_KEY
